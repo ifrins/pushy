@@ -63,6 +63,14 @@ public interface PushNotificationResponse<T extends ApnsPushNotification> {
     UUID getApnsId();
 
     /**
+     * Returns the unique ID assigned to this push notification by the APNs server.
+     * Only available in the Sandbox environment.
+     *
+     * @return the unique ID assigned to this push notification by the APNs server
+     */
+    UUID getApnsUniqueId();
+
+    /**
      * Returns the HTTP status code reported by the APNs server.
      *
      * @return the HTTP status code reported by the APNs server

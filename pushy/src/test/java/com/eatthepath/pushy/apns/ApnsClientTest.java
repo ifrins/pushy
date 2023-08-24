@@ -739,6 +739,75 @@ public class ApnsClientTest extends AbstractClientServerTest {
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void testHandlesApnsUniqueIdResponseOnAccepted(final boolean sendsApnsUniqueId) throws Exception {
+        final ValidatingPushNotificationHandlerFactory handlerFactory = new ValidatingPushNotificationHandlerFactory(
+                DEVICE_TOKENS_BY_TOPIC, EXPIRATION_TIMESTAMPS_BY_DEVICE_TOKEN, this.verificationKeysByKeyId,
+                this.topicsByVerificationKey);
+
+        final MockApnsServer server = this.buildServer(handlerFactory, null, sendsApnsUniqueId);
+        final ApnsClient client = this.buildTokenAuthenticationClient();
+
+        try {
+            server.start(PORT).get();
+
+            final SimpleApnsPushNotification pushNotification = new SimpleApnsPushNotification(DEVICE_TOKEN, TOPIC, PAYLOAD);
+
+            final PushNotificationResponse<SimpleApnsPushNotification> response =
+                    client.sendNotification(pushNotification).get();
+
+            assertTrue(response.isAccepted(),
+                    "Clients must send notifications that conform to the APNs protocol specification.");
+
+            assertNotNull(response.getApnsId());
+
+            if (sendsApnsUniqueId) {
+                assertNotNull(response.getApnsUniqueId());
+            } else {
+                assertNull(response.getApnsUniqueId());
+            }
+
+            assertEquals(200, response.getStatusCode());
+        } finally {
+            client.close().get();
+            server.shutdown().get();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void testHandlesApnsUniqueIdResponseOnRejected(final boolean sendsApnsUniqueId) throws Exception {
+        final PushNotificationHandlerFactory handlerFactory = sslSession -> (headers, payload) -> {
+            throw new RejectedNotificationException(RejectionReason.BAD_DEVICE_TOKEN);
+        };
+
+        final MockApnsServer server = this.buildServer(handlerFactory, null, sendsApnsUniqueId);
+        final ApnsClient client = this.buildTokenAuthenticationClient();
+
+        try {
+            server.start(PORT).get();
+
+            final SimpleApnsPushNotification pushNotification =
+                    new SimpleApnsPushNotification(DEVICE_TOKEN, TOPIC, PAYLOAD);
+
+            final PushNotificationResponse<SimpleApnsPushNotification> response =
+                    client.sendNotification(pushNotification).get();
+
+            assertFalse(response.isAccepted());
+
+            if (sendsApnsUniqueId) {
+                assertNotNull(response.getApnsUniqueId());
+            } else {
+                assertNull(response.getApnsUniqueId());
+            }
+        } finally {
+            client.close().get();
+            server.shutdown().get();
+        }
+    }
+
+
     private static Stream<Arguments> getParametersForTestSendNotificationWithPushTypeHeader() {
         return Stream.of(
                 arguments((Object) null),

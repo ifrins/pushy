@@ -145,12 +145,17 @@ public class AbstractClientServerTest {
     }
 
     protected MockApnsServer buildServer(final PushNotificationHandlerFactory handlerFactory, final MockApnsServerListener listener) throws SSLException {
+        return this.buildServer(handlerFactory, listener, false);
+    }
+
+    protected MockApnsServer buildServer(final PushNotificationHandlerFactory handlerFactory, final MockApnsServerListener listener, final boolean sendApnsUniqueId) throws SSLException {
         return new MockApnsServerBuilder()
                 .setServerCredentials(getClass().getResourceAsStream(SERVER_CERTIFICATES_FILENAME), getClass().getResourceAsStream(SERVER_KEY_FILENAME), null)
                 .setTrustedClientCertificateChain(getClass().getResourceAsStream(CA_CERTIFICATE_FILENAME))
                 .setEventLoopGroup(SERVER_EVENT_LOOP_GROUP)
                 .setHandlerFactory(handlerFactory)
                 .setListener(listener)
+                .setSendApnsUniqueId(sendApnsUniqueId)
                 .build();
     }
 

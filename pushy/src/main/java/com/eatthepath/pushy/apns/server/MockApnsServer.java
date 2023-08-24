@@ -54,9 +54,11 @@ public class MockApnsServer extends BaseHttp2Server {
 
     private final int maxConcurrentStreams;
 
+    private final boolean sendApnsUniqueId;
+
     MockApnsServer(final SslContext sslContext, final EventLoopGroup eventLoopGroup,
                    final PushNotificationHandlerFactory handlerFactory, final MockApnsServerListener listener,
-                   final int maxConcurrentStreams) {
+                   final int maxConcurrentStreams, final boolean sendApnsUniqueId) {
 
         super(sslContext, eventLoopGroup);
 
@@ -64,6 +66,8 @@ public class MockApnsServer extends BaseHttp2Server {
         this.listener = listener;
 
         this.maxConcurrentStreams = maxConcurrentStreams;
+
+        this.sendApnsUniqueId = sendApnsUniqueId;
     }
 
     @Override
@@ -74,6 +78,7 @@ public class MockApnsServer extends BaseHttp2Server {
                 .pushNotificationHandler(pushNotificationHandler)
                 .initialSettings(Http2Settings.defaultSettings().maxConcurrentStreams(this.maxConcurrentStreams))
                 .listener(this.listener)
+                .sendApnsUniqueId(this.sendApnsUniqueId)
                 .build();
 
         pipeline.addLast(serverHandler);
